@@ -1,0 +1,11 @@
+.env
+logrus.log
+
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+# Dependency directories
+vendor/
+
+.idea/
