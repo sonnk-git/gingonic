@@ -1,18 +1,21 @@
 package main
 
 import (
+	"gingonic/route"
 	"github.com/joho/godotenv"
+	"gorm.io/gorm"
 	"log"
 	"net/http"
 	"os"
 
-	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
-	"github.com/toorop/gin-logrus"
+	"gingonic/db"
+	"gingonic/middlewares"
+	"gingonic/models"
 	"github.com/foolin/goview/supports/ginview"
+	"github.com/gin-gonic/gin"
 )
 
-var db = make(map[string]string)
+var DB *gorm.DB
 
 func setupRouter() *gin.Engine {
 	err := godotenv.Load()
@@ -24,44 +27,14 @@ func setupRouter() *gin.Engine {
 	// gin.DisableConsoleColor()
 	gin.SetMode(os.Getenv("MODE"))
 	r := gin.Default()
-
-	log := logrus.New()
-	r.Use(ginlogrus.Logger(log), gin.Recovery())
-
-	// The API for setting attributes is a little different than the package level
-	// exported logger. See Godoc.
-	log.Out = os.Stdout
-
-	// You could set this to any `io.Writer` such as a file
-	file, err := os.OpenFile("logrus.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err == nil {
-	 log.Out = file
-	} else {
-	 log.Info("Failed to log to file, using default stderr")
+	r = middlewares.SetUpLogger(r)
+	DB = db.InitORM()
+	err = models.AutoMigrate(DB)
+	if err != nil {
+		log.Fatal("Error migrate DB")
 	}
-
 	r.HTMLRender = ginview.Default()
-
-	r.GET("/page", func(ctx *gin.Context) {
-		//render only file, must full name with extension
-		ctx.HTML(http.StatusOK, "page.html", gin.H{"title": "Page file title!!"})
-	})
-
-	// Ping test
-	r.GET("/ping", func(c *gin.Context) {
-		c.String(http.StatusOK, "pong")
-	})
-
-	// Get user value
-	r.GET("/user/:name", func(c *gin.Context) {
-		user := c.Params.ByName("name")
-		value, ok := db[user]
-		if ok {
-			c.JSON(http.StatusOK, gin.H{"user": user, "value": value})
-		} else {
-			c.JSON(http.StatusOK, gin.H{"user": user, "status": "no value"})
-		}
-	})
+	route.RegisterWeb(r)
 
 	// Authorized group (uses gin.BasicAuth() middleware)
 	// Same than:
@@ -85,7 +58,7 @@ func setupRouter() *gin.Engine {
 	  	-d '{"value":"bar"}'
 	*/
 	authorized.POST("admin", func(c *gin.Context) {
-		user := c.MustGet(gin.AuthUserKey).(string)
+		//user := c.MustGet(gin.AuthUserKey).(string)
 
 		// Parse JSON
 		var json struct {
@@ -93,7 +66,6 @@ func setupRouter() *gin.Engine {
 		}
 
 		if c.Bind(&json) == nil {
-			db[user] = json.Value
 			c.JSON(http.StatusOK, gin.H{"status": "ok"})
 		}
 	})
