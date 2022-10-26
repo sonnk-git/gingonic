@@ -6,7 +6,7 @@ import (
 )
 
 func init() {
-	fmt.Println("Init user models")
+	fmt.Println("Init user models ")
 }
 
 type User struct {
