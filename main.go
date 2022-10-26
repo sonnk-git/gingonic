@@ -28,11 +28,16 @@ func setupRouter() *gin.Engine {
 	gin.SetMode(os.Getenv("MODE"))
 	r := gin.Default()
 	r = middlewares.SetUpLogger(r)
+
+	privateRouter := r.Group("/api")
+	privateRouter.Use(middlewares.JwtTokenCheck)
+
 	DB = db.InitORM()
 	err = models.AutoMigrate(DB)
 	if err != nil {
 		log.Fatal("Error migrate DB")
 	}
+
 	r.HTMLRender = ginview.Default()
 	route.RegisterWeb(r)
 
