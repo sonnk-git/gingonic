@@ -4,6 +4,8 @@ import (
 	"gingonic/db"
 	"gingonic/middlewares"
 	"gingonic/models"
+	"gingonic/route/api"
+	"gingonic/route/web"
 	"github.com/foolin/goview/supports/ginview"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -27,9 +29,6 @@ func SetupRouter() *gin.Engine {
 	r := gin.Default()
 	r = middlewares.SetUpLogger(r)
 
-	privateRouter := r.Group("/api")
-	privateRouter.Use(middlewares.JwtTokenCheck)
-
 	DB = db.InitORM()
 	err = models.AutoMigrate(DB)
 	if err != nil {
@@ -37,7 +36,8 @@ func SetupRouter() *gin.Engine {
 	}
 
 	r.HTMLRender = ginview.Default()
-	RegisterWeb(r)
+	api.RegisterAPI(r)
+	web.RegisterWeb(r)
 
 	// Authorized group (uses gin.BasicAuth() middleware)
 	// Same than:
