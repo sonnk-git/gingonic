@@ -9,13 +9,10 @@ import (
 	"github.com/foolin/goview/supports/ginview"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"gorm.io/gorm"
 	"log"
 	"net/http"
 	"os"
 )
-
-var DB *gorm.DB
 
 func SetupRouter() *gin.Engine {
 	err := godotenv.Load()
@@ -29,8 +26,7 @@ func SetupRouter() *gin.Engine {
 	r := gin.Default()
 	r = middlewares.SetUpLogger(r)
 
-	DB = db.InitORM()
-	err = models.AutoMigrate(DB)
+	err = models.AutoMigrate(db.InitORM())
 	if err != nil {
 		log.Fatal("Error migrate DB")
 	}

@@ -8,7 +8,6 @@ import (
 
 func RegisterAPI(r *gin.Engine) {
 	apiGroupRouter := r.Group("/api")
-	//apiGroupRouter.Use(middlewares.JwtTokenCheck)
 
 	apiGroupRouter.GET("/", func(c *gin.Context) {
 		c.IndentedJSON(http.StatusOK, struct{}{})

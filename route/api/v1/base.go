@@ -1,22 +1,24 @@
 package v1
 
 import (
+	"gingonic/middlewares"
 	"gingonic/route/api/v1/auth"
 	"gingonic/route/api/v1/user"
 	"github.com/gin-gonic/gin"
 )
 
-const V1 string = "v1"
+const V1 = "v1"
 
-func Register(r *gin.RouterGroup) *gin.RouterGroup {
-	// Init
-	v1 := r.Group(V1)
+func Register(r *gin.RouterGroup) {
 
-	// Authenticate
-	v1 = auth.Route(v1)
+	/* ---------------------------  Public routes  --------------------------- */
+	public := r.Group(V1)
+	public = auth.Route(public)
+
+	/* ---------------------------  Private routes  --------------------------- */
+	private := r.Group(V1)
+	private.Use(middlewares.JwtTokenCheck)
 
 	// User
-	v1 = user.Route(v1)
-
-	return v1
+	private = user.Route(private)
 }

@@ -2,7 +2,6 @@ package models
 
 import (
 	"fmt"
-	"gorm.io/gorm"
 )
 
 func init() {
@@ -10,8 +9,9 @@ func init() {
 }
 
 type User struct {
-	gorm.Model
-	Name     string
-	Email    string
-	Password string
+	BaseUuid
+	Name     string `json:"name,omitempty"`
+	Email    string `gorm:"unique" json:"email,omitempty"`
+	Password string `json:"password,omitempty"`
+	Base
 }
