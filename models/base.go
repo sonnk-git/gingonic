@@ -12,7 +12,7 @@ func init() {
 }
 
 type BaseUuid struct {
-	ID string `gorm:"primaryKey"`
+	ID string `gorm:"primaryKey" json:"id"`
 }
 
 type Base struct {

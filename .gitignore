@@ -9,3 +9,4 @@ logrus.log
 vendor/
 
 .idea/
+tmp/
