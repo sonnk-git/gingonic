@@ -5,6 +5,7 @@ import (
 	"gingonic/middlewares"
 	"gingonic/models"
 	"gingonic/route/api"
+	"gingonic/route/graph"
 	"gingonic/route/web"
 	"github.com/foolin/goview/supports/ginview"
 	"github.com/gin-gonic/gin"
@@ -23,7 +24,10 @@ func SetupRouter() *gin.Engine {
 	// Disable Console Color
 	// gin.DisableConsoleColor()
 	gin.SetMode(os.Getenv("MODE"))
-	r := gin.Default()
+
+	// use New instead of Default: https://github.com/toorop/gin-logrus/issues/2
+	r := gin.New()
+	r.Use(gin.Recovery())
 	r = middlewares.SetUpLogger(r)
 
 	err = models.AutoMigrate(db.InitORM())
@@ -34,6 +38,7 @@ func SetupRouter() *gin.Engine {
 	r.HTMLRender = ginview.Default()
 	api.RegisterAPI(r)
 	web.RegisterWeb(r)
+	graph.RegisterGraphQL(r)
 
 	// Authorized group (uses gin.BasicAuth() middleware)
 	// Same than:

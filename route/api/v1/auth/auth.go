@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"gingonic/controllers/auth"
+	"gingonic/controllers/api/auth"
 	"github.com/gin-gonic/gin"
 )
 
