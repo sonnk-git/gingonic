@@ -1,8 +1,8 @@
 package user
 
 import (
+	"gingonic/controllers"
 	"github.com/gin-gonic/gin"
-	"net/http"
 )
 
 const PATH = "user"
@@ -10,8 +10,7 @@ const PATH = "user"
 func Route(r *gin.RouterGroup) *gin.RouterGroup {
 	user := r.Group(PATH)
 
-	user.GET("/info", func(c *gin.Context) {
-		c.IndentedJSON(http.StatusOK, struct{}{})
-	})
+	user.GET("/info", controllers.GetInfo)
+
 	return r
 }

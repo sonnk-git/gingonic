@@ -3,6 +3,7 @@ package auth
 import (
 	"fmt"
 	"gingonic/db"
+	"gingonic/middlewares"
 	"gingonic/models"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -10,7 +11,40 @@ import (
 )
 
 func Login(c *gin.Context) {
-	c.IndentedJSON(http.StatusOK, struct{}{})
+	user := &models.User{}
+
+	err := c.BindJSON(&user)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"status": false, "message": err.Error()})
+	}
+	passInput := user.Password
+
+	record := db.Orm.First(user, "email = ?", user.Email)
+	var count int64
+	record.Count(&count)
+	if  count == 0 {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"status": false, "Account does not exist": user.Email})
+		return
+	}
+
+	// check password
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password),[]byte(passInput)); err != nil {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"status": false, "Wrong password for": user.Email})
+		return
+	}
+
+	// build token JWT
+	token, err := middlewares.Build(*user)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"status": false, "message": "Error when create token JWT"})
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, gin.H{
+		"status": true,
+		"token": token,
+		"email": user.Email,
+	})
 }
 
 type EmailRequestBody struct {
@@ -34,9 +68,12 @@ func Register(c *gin.Context) {
 	if tx.Error != nil {
 		_ = c.Error(tx.Error)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"status": false, "message": tx.Error.Error()})
-		}
+	}
 
-	c.IndentedJSON(http.StatusOK, struct{}{})
+	c.IndentedJSON(http.StatusOK, gin.H{
+		"status": true,
+		"message": "Register account successfully.",
+	})
 }
 
 func Logout(c *gin.Context) {

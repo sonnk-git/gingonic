@@ -2,6 +2,8 @@ package middlewares
 
 import (
 	"errors"
+	"fmt"
+	"gingonic/models"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
 	"net/http"
@@ -16,7 +18,7 @@ type UnsignedResponse struct {
 
 func Parse(tokenString string) (*jwt.Token, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		if _, OK := token.Method.(*jwt.SigningMethodHMAC); !OK {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("bad signed method received")
 		}
 		return []byte(os.Getenv("APP_SECRET_KEY")), nil
@@ -28,13 +30,18 @@ func Parse(tokenString string) (*jwt.Token, error) {
 	return token, nil
 }
 
-func Build() (string, error) {
+func Build(user models.User) (string, error) {
+
 	// Create a new token object, specifying signing method and the claims
 	// you would like it to contain.
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"foo": "bar",
-		"nbf": time.Date(2015, 10, 10, 12, 0, 0, 0, time.UTC).Unix(),
-	})
+	claims := jwt.MapClaims{
+		"iat": time.Now().Unix(),
+		"exp": time.Now().Add(30 * time.Minute).Unix(),
+		"id" : user.ID,
+		"name" : user.Name,
+		"email" : user.Email,
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	// Sign and get the complete encoded token as a string using the secret
 	tokenString, err := token.SignedString([]byte(os.Getenv("APP_SECRET_KEY")))
@@ -72,7 +79,9 @@ func JwtTokenCheck(c *gin.Context) {
 		return
 	}
 
-	_, OK := token.Claims.(jwt.MapClaims)
+	claims, OK := token.Claims.(jwt.MapClaims)
+	fmt.Printf("%+v\n", claims)
+
 	if !OK {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, UnsignedResponse{
 			Message: "unable to parse claims",
