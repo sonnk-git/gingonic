@@ -2,7 +2,7 @@ package middlewares
 
 import (
 	"errors"
-	"fmt"
+	"gingonic/db"
 	"gingonic/models"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
@@ -80,13 +80,32 @@ func JwtTokenCheck(c *gin.Context) {
 	}
 
 	claims, OK := token.Claims.(jwt.MapClaims)
-	fmt.Printf("%+v\n", claims)
 
+	exists := false
+	err = db.Orm.Model(&models.User{}).Select("count(*) > 0").
+		Where("id = ?", claims["id"]).
+		Find(&exists).
+		Error
+	if err != nil || !exists {
+		c.AbortWithStatusJSON(http.StatusBadRequest, UnsignedResponse{
+			Message: "bad jwt token",
+		})
+	}
+	if time.Now().After(time.Unix(int64(claims["exp"].(float64)), 0)) {
+		c.AbortWithStatusJSON(http.StatusBadRequest, UnsignedResponse{
+			Message: "jwt token is expired",
+		})
+	}
 	if !OK {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, UnsignedResponse{
 			Message: "unable to parse claims",
 		})
 		return
 	}
+
+	c.Set("email", claims["email"])
+	c.Set("username", claims["name"])
+	c.Set("id", claims["id"])
+
 	c.Next()
 }
