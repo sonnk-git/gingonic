@@ -41,6 +41,7 @@ type ResolverRoot interface {
 }
 
 type DirectiveRoot struct {
+	Authenticated func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
 }
 
 type ComplexityRoot struct {
@@ -223,6 +224,8 @@ var sources = []*ast.Source{
 type Mutation {
   NoOp: Boolean
 }
+
+directive @authenticated on FIELD_DEFINITION
 `, BuiltIn: false},
 	{Name: "../models/user.graphqls", Input: `type User {
   id: ID!
@@ -238,7 +241,7 @@ input NewUser {
 }
 
 extend type Query {
-  users: [User!]!
+  users: [User!]! @authenticated
 }
 
 extend type Mutation {
@@ -480,8 +483,28 @@ func (ec *executionContext) _Query_users(ctx context.Context, field graphql.Coll
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Users(rctx)
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().Users(rctx)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticated == nil {
+				return nil, errors.New("directive authenticated is not implemented")
+			}
+			return ec.directives.Authenticated(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.([]*model.User); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*gingonic/graph.User`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)

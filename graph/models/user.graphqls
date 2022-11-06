@@ -12,7 +12,7 @@ input NewUser {
 }
 
 extend type Query {
-  users: [User!]!
+  users: [User!]! @authenticated
 }
 
 extend type Mutation {

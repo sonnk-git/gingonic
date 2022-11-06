@@ -35,11 +35,11 @@ func Build(user models.User) (string, error) {
 	// Create a new token object, specifying signing method and the claims
 	// you would like it to contain.
 	claims := jwt.MapClaims{
-		"iat": time.Now().Unix(),
-		"exp": time.Now().Add(30 * time.Minute).Unix(),
-		"id" : user.ID,
-		"name" : user.Name,
-		"email" : user.Email,
+		"iat":   time.Now().Unix(),
+		"exp":   time.Now().Add(30 * time.Minute).Unix(),
+		"id":    user.ID,
+		"name":  user.Name,
+		"email": user.Email,
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
@@ -81,6 +81,13 @@ func JwtTokenCheck(c *gin.Context) {
 
 	claims, OK := token.Claims.(jwt.MapClaims)
 
+	if !OK {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, UnsignedResponse{
+			Message: "unable to parse claims",
+		})
+		return
+	}
+
 	exists := false
 	err = db.Orm.Model(&models.User{}).Select("count(*) > 0").
 		Where("id = ?", claims["id"]).
@@ -91,21 +98,32 @@ func JwtTokenCheck(c *gin.Context) {
 			Message: "bad jwt token",
 		})
 	}
-	if time.Now().After(time.Unix(int64(claims["exp"].(float64)), 0)) {
-		c.AbortWithStatusJSON(http.StatusBadRequest, UnsignedResponse{
-			Message: "jwt token is expired",
-		})
-	}
-	if !OK {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, UnsignedResponse{
-			Message: "unable to parse claims",
-		})
-		return
-	}
 
 	c.Set("email", claims["email"])
 	c.Set("username", claims["name"])
 	c.Set("id", claims["id"])
 
 	c.Next()
+}
+
+func JwtTokenCheckInGraphql(tokenString string) error {
+	tokenString, err := extractBearerToken(tokenString)
+	token, err := Parse(tokenString)
+	if err != nil {
+		return err
+	}
+	claims, OK := token.Claims.(jwt.MapClaims)
+	if !OK {
+		return errors.New("unable to parse claims")
+	}
+
+	exists := false
+	err = db.Orm.Model(&models.User{}).Select("count(*) > 0").
+		Where("id = ?", claims["id"]).
+		Find(&exists).
+		Error
+	if err != nil || !exists {
+		return errors.New("account not exists")
+	}
+	return err
 }
