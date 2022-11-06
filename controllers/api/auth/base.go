@@ -22,13 +22,13 @@ func Login(c *gin.Context) {
 	record := db.Orm.First(user, "email = ?", user.Email)
 	var count int64
 	record.Count(&count)
-	if  count == 0 {
+	if count == 0 {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"status": false, "Account does not exist": user.Email})
 		return
 	}
 
 	// check password
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password),[]byte(passInput)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(passInput)); err != nil {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"status": false, "Wrong password for": user.Email})
 		return
 	}
@@ -42,8 +42,8 @@ func Login(c *gin.Context) {
 
 	c.IndentedJSON(http.StatusOK, gin.H{
 		"status": true,
-		"token": token,
-		"email": user.Email,
+		"token":  token,
+		"email":  user.Email,
 	})
 }
 
@@ -71,7 +71,7 @@ func Register(c *gin.Context) {
 	}
 
 	c.IndentedJSON(http.StatusOK, gin.H{
-		"status": true,
+		"status":  true,
 		"message": "Register account successfully.",
 	})
 }

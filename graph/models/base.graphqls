@@ -1,9 +1,9 @@
 type Query {
-  NoOp: Boolean
+    NoOp: Boolean
 }
 
 type Mutation {
-  NoOp: Boolean
+    NoOp: Boolean
 }
 
 directive @authenticated on FIELD_DEFINITION
