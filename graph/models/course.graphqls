@@ -1,0 +1,6 @@
+type Course {
+    id: ID!
+    userId: ID!
+    name: String!
+    description: String!
+}

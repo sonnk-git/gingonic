@@ -1,0 +1,6 @@
+type Card {
+    id: ID!
+    terminology: String
+    definition: String
+    courseId: ID!
+}

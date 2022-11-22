@@ -2,6 +2,20 @@
 
 package model
 
+type Card struct {
+	ID          string  `json:"id"`
+	Terminology *string `json:"terminology"`
+	Definition  *string `json:"definition"`
+	CourseID    string  `json:"courseId"`
+}
+
+type Course struct {
+	ID          string `json:"id"`
+	UserID      string `json:"userId"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
 type NewUser struct {
 	Email    string `json:"email"`
 	Username string `json:"username"`
