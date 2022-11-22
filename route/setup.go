@@ -29,6 +29,7 @@ func SetupRouter() *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Recovery())
 	r = middlewares.SetUpLogger(r)
+	r.Use(middlewares.CORSMiddleware())
 
 	err = models.AutoMigrate(db.InitORM())
 	if err != nil {
