@@ -27,5 +27,9 @@ func (b *BaseUuid) BeforeCreate(tx *gorm.DB) (err error) {
 }
 
 func AutoMigrate(DB *gorm.DB) error {
-	return DB.AutoMigrate(User{})
+	return DB.AutoMigrate(
+		User{},
+		Course{},
+		Card{},
+	)
 }

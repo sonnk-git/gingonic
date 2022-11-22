@@ -20,4 +20,11 @@ func RegisterWeb(r *gin.Engine) {
 	r.GET("/user/:name", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"user": "user", "status": "no value"})
 	})
+
+	r.GET("/test", func(c *gin.Context) {
+		//course := &models.Course{}
+		//user := &models.User{}
+		//db.Orm.Preload("Courses").Preload("Courses.Cards").First(user)
+		c.JSON(http.StatusOK, gin.H{"data": nil})
+	})
 }
