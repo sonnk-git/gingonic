@@ -31,7 +31,7 @@ func graphqlHandler() gin.HandlerFunc {
 		var ginContext *gin.Context
 		ginContext = ctx.Value("GinContextKey").(*gin.Context)
 		token := ginContext.Request.Header.Get("Authentication")
-		err = middlewares.JwtTokenCheckInGraphql(token)
+		_, err = middlewares.JwtTokenCheckInGraphql(token)
 		if err != nil {
 			return nil, fmt.Errorf("%v", err.Error())
 		}

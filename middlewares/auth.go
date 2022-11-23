@@ -36,7 +36,7 @@ func Build(user models.User) (string, error) {
 	// you would like it to contain.
 	claims := jwt.MapClaims{
 		"iat":   time.Now().Unix(),
-		"exp":   time.Now().Add(30 * time.Minute).Unix(),
+		"exp":   time.Now().Add(90 * time.Minute).Unix(),
 		"id":    user.ID,
 		"name":  user.Name,
 		"email": user.Email,
@@ -106,24 +106,21 @@ func JwtTokenCheck(c *gin.Context) {
 	c.Next()
 }
 
-func JwtTokenCheckInGraphql(tokenString string) error {
+func JwtTokenCheckInGraphql(tokenString string) (models.User, error) {
 	tokenString, err := ExtractBearerToken(tokenString)
 	token, err := Parse(tokenString)
+	user := models.User{}
 	if err != nil {
-		return err
+		return user, err
 	}
 	claims, OK := token.Claims.(jwt.MapClaims)
 	if !OK {
-		return errors.New("unable to parse claims")
+		return user, errors.New("unable to parse claims")
 	}
 
-	exists := false
-	err = db.Orm.Model(&models.User{}).Select("count(*) > 0").
-		Where("id = ?", claims["id"]).
-		Find(&exists).
-		Error
-	if err != nil || !exists {
-		return errors.New("account not exists")
+	tx := db.Orm.First(&user, "id = ?", claims["id"])
+	if tx.Error != nil {
+		return user, errors.New("account not exists")
 	}
-	return err
+	return user, err
 }
