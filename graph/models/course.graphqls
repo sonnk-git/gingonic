@@ -4,3 +4,25 @@ type Course {
     name: String!
     description: String!
 }
+
+input NewCourseInput {
+    name: String!
+    description: String
+}
+
+input CourseInput {
+    id: ID!
+    name: String!
+    description: String!
+}
+
+extend type Query {
+    getCourses: [Course]! @authenticated
+    getCourse(ID: String!): Course @authenticated
+}
+
+extend type Mutation {
+    createCourse(input: NewCourseInput!): Course! @authenticated
+    editCourse(input: CourseInput!): Course! @authenticated
+    deleteCourse(ID: String!): Boolean! @authenticated
+}

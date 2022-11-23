@@ -4,3 +4,25 @@ type Card {
     definition: String
     courseId: ID!
 }
+
+input NewCardInput {
+    terminology: String
+    definition: String
+}
+
+input CardInput {
+    id: ID!
+    terminology: String
+    definition: String
+}
+
+extend type Query {
+    getCards(CourseID: String): [Card]! @authenticated
+    getCard(ID: String!): Card @authenticated
+}
+
+extend type Mutation {
+    createCard(input: NewCardInput!): Card! @authenticated
+    editCard(input: CardInput!): Card! @authenticated
+    deleteCard(ID: String!): Boolean! @authenticated
+}
