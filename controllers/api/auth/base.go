@@ -6,6 +6,7 @@ import (
 	"gingonic/middlewares"
 	"gingonic/models"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v4"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
 )
@@ -82,4 +83,52 @@ func Logout(c *gin.Context) {
 
 func ForgotPassword(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, struct{}{})
+}
+
+func CheckIsLogin(c *gin.Context) {
+	jwtToken, err := middlewares.ExtractBearerToken(c.GetHeader("Authorization"))
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+			"status":  false,
+			"message": "Invalid token",
+		})
+		return
+	}
+
+	token, err := middlewares.Parse(jwtToken)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+			"status":  false,
+			"message": "Invalid token",
+		})
+		return
+	}
+
+	claims, OK := token.Claims.(jwt.MapClaims)
+
+	if !OK {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+			"status":  false,
+			"message": "Invalid token",
+		})
+		return
+	}
+
+	exists := false
+	err = db.Orm.Model(&models.User{}).Select("count(*) > 0").
+		Where("id = ?", claims["id"]).
+		Find(&exists).
+		Error
+	if err != nil || !exists {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+			"status":  false,
+			"message": "Invalid token",
+		})
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, gin.H{
+		"status":  true,
+		"message": "Valid token",
+	})
 }

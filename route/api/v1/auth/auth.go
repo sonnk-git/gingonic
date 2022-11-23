@@ -11,6 +11,7 @@ func Route(r *gin.RouterGroup) *gin.RouterGroup {
 	r.POST("/register", auth.Register)
 	r.POST("/logout", auth.Logout)
 	r.POST("/forgot-password", auth.ForgotPassword)
+	r.POST("/check-login", auth.CheckIsLogin)
 
 	return r
 }

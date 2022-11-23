@@ -49,7 +49,7 @@ func Build(user models.User) (string, error) {
 	return tokenString, err
 }
 
-func extractBearerToken(header string) (string, error) {
+func ExtractBearerToken(header string) (string, error) {
 	if header == "" {
 		return "", errors.New("bad header value given")
 	}
@@ -63,7 +63,7 @@ func extractBearerToken(header string) (string, error) {
 }
 
 func JwtTokenCheck(c *gin.Context) {
-	jwtToken, err := extractBearerToken(c.GetHeader("Authorization"))
+	jwtToken, err := ExtractBearerToken(c.GetHeader("Authorization"))
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, UnsignedResponse{
 			Message: err.Error(),
@@ -107,7 +107,7 @@ func JwtTokenCheck(c *gin.Context) {
 }
 
 func JwtTokenCheckInGraphql(tokenString string) error {
-	tokenString, err := extractBearerToken(tokenString)
+	tokenString, err := ExtractBearerToken(tokenString)
 	token, err := Parse(tokenString)
 	if err != nil {
 		return err
