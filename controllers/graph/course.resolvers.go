@@ -7,8 +7,9 @@ import (
 	"context"
 	"fmt"
 	"gingonic/db"
-	"gingonic/graph"
+	model "gingonic/graph"
 	OrmModels "gingonic/models"
+
 	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
@@ -20,8 +21,8 @@ func (r *mutationResolver) CreateCourse(ctx context.Context, input model.NewCour
 	}
 
 	course := &OrmModels.Course{
-		UserID: user.ID,
-		Name: input.Name,
+		UserID:      user.ID,
+		Name:        input.Name,
 		Description: *input.Description,
 	}
 
@@ -58,7 +59,7 @@ func (r *mutationResolver) EditCourse(ctx context.Context, input model.CourseInp
 	}
 
 	tx = db.Orm.Model(&course).Updates(OrmModels.Course{
-		Name: input.Name,
+		Name:        input.Name,
 		Description: input.Description,
 	})
 	if tx.Error != nil {
@@ -82,10 +83,45 @@ func (r *mutationResolver) DeleteCourse(ctx context.Context, id string) (bool, e
 
 // GetCourses is the resolver for the getCourses field.
 func (r *queryResolver) GetCourses(ctx context.Context) ([]*model.Course, error) {
-	panic(fmt.Errorf("not implemented: GetCourses - getCourses"))
+	user, err := GetUserFromContext(ctx)
+	if err != nil {
+		return nil, gqlerror.Errorf("Error when get user from context")
+	}
+
+	var coursesGQL []*model.Course
+	var courses []OrmModels.Course
+	db.Orm.Where("user_id = ?", user.ID).Find(&courses)
+
+	for _, v := range courses {
+		coursesGQL = append(coursesGQL, &model.Course{
+			ID:          v.ID,
+			UserID:      v.UserID,
+			Name:        v.Name,
+			Description: v.Description,
+		})
+	}
+
+	return coursesGQL, nil
 }
 
 // GetCourse is the resolver for the getCourse field.
 func (r *queryResolver) GetCourse(ctx context.Context, id string) (*model.Course, error) {
-	panic(fmt.Errorf("not implemented: GetCourse - getCourse"))
+	user, err := GetUserFromContext(ctx)
+	if err != nil {
+		return nil, gqlerror.Errorf("Error when get user from context")
+	}
+
+	course := &OrmModels.Course{}
+	tx := db.Orm.First(&course, "user_id = ? AND id = ?", user.ID, id)
+	if tx.Error != nil || tx.RowsAffected < 1 {
+		return nil, gqlerror.Errorf("Error when get course from GetCourse")
+	}
+	courseGQL := model.Course{
+		ID:          course.ID,
+		UserID:      course.UserID,
+		Name:        course.Name,
+		Description: course.Description,
+	}
+
+	return &courseGQL, nil
 }

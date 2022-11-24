@@ -30,7 +30,7 @@ func graphqlHandler() gin.HandlerFunc {
 	c.Directives.Authenticated = func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error) {
 		var ginContext *gin.Context
 		ginContext = ctx.Value("GinContextKey").(*gin.Context)
-		token := ginContext.Request.Header.Get("Authentication")
+		token := ginContext.Request.Header.Get("Authorization")
 		_, err = middlewares.JwtTokenCheckInGraphql(token)
 		if err != nil {
 			return nil, fmt.Errorf("%v", err.Error())
@@ -58,7 +58,7 @@ func ginContextToContextMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := context.WithValue(c.Request.Context(), "GinContextKey", c)
 		c.Request = c.Request.WithContext(ctx)
-		c.Set("token", c.Request.Header.Get("Authentication"))
+		c.Set("token", c.Request.Header.Get("Authorization"))
 		c.Next()
 	}
 }

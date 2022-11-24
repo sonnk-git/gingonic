@@ -29,6 +29,7 @@ type CourseInput struct {
 }
 
 type NewCardInput struct {
+	CourseID    string  `json:"courseId"`
 	Terminology *string `json:"terminology"`
 	Definition  *string `json:"definition"`
 }

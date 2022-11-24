@@ -6,6 +6,7 @@ type Card {
 }
 
 input NewCardInput {
+    courseId: String!
     terminology: String
     definition: String
 }

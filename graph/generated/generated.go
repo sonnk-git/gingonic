@@ -444,6 +444,7 @@ directive @authenticated on FIELD_DEFINITION
 }
 
 input NewCardInput {
+    courseId: String!
     terminology: String
     definition: String
 }
@@ -4278,13 +4279,21 @@ func (ec *executionContext) unmarshalInputNewCardInput(ctx context.Context, obj 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"terminology", "definition"}
+	fieldsInOrder := [...]string{"courseId", "terminology", "definition"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
+		case "courseId":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("courseId"))
+			it.CourseID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "terminology":
 			var err error
 
