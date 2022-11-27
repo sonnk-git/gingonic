@@ -60,14 +60,15 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateCard   func(childComplexity int, input model.NewCardInput) int
-		CreateCourse func(childComplexity int, input model.NewCourseInput) int
-		CreateUser   func(childComplexity int, input model.NewUser) int
-		DeleteCard   func(childComplexity int, id string) int
-		DeleteCourse func(childComplexity int, id string) int
-		EditCard     func(childComplexity int, input model.CardInput) int
-		EditCourse   func(childComplexity int, input model.CourseInput) int
-		NoOp         func(childComplexity int) int
+		CreateCard          func(childComplexity int, input model.NewCardInput) int
+		CreateCardsFromText func(childComplexity int, input *model.NewCardInputFromText) int
+		CreateCourse        func(childComplexity int, input model.NewCourseInput) int
+		CreateUser          func(childComplexity int, input model.NewUser) int
+		DeleteCard          func(childComplexity int, id string) int
+		DeleteCourse        func(childComplexity int, id string) int
+		EditCard            func(childComplexity int, input model.CardInput) int
+		EditCourse          func(childComplexity int, input model.CourseInput) int
+		NoOp                func(childComplexity int) int
 	}
 
 	Query struct {
@@ -92,6 +93,7 @@ type MutationResolver interface {
 	CreateCard(ctx context.Context, input model.NewCardInput) (*model.Card, error)
 	EditCard(ctx context.Context, input model.CardInput) (*model.Card, error)
 	DeleteCard(ctx context.Context, id string) (bool, error)
+	CreateCardsFromText(ctx context.Context, input *model.NewCardInputFromText) ([]*model.Card, error)
 	CreateCourse(ctx context.Context, input model.NewCourseInput) (*model.Course, error)
 	EditCourse(ctx context.Context, input model.CourseInput) (*model.Course, error)
 	DeleteCourse(ctx context.Context, id string) (bool, error)
@@ -188,6 +190,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.CreateCard(childComplexity, args["input"].(model.NewCardInput)), true
+
+	case "Mutation.createCardsFromText":
+		if e.complexity.Mutation.CreateCardsFromText == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createCardsFromText_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateCardsFromText(childComplexity, args["input"].(*model.NewCardInputFromText)), true
 
 	case "Mutation.createCourse":
 		if e.complexity.Mutation.CreateCourse == nil {
@@ -364,6 +378,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCardInput,
 		ec.unmarshalInputCourseInput,
 		ec.unmarshalInputNewCardInput,
+		ec.unmarshalInputNewCardInputFromText,
 		ec.unmarshalInputNewCourseInput,
 		ec.unmarshalInputNewUser,
 	)
@@ -449,6 +464,11 @@ input NewCardInput {
     definition: String
 }
 
+input NewCardInputFromText {
+    courseId: String!
+    text: String!
+}
+
 input CardInput {
     id: ID!
     terminology: String
@@ -464,6 +484,7 @@ extend type Mutation {
     createCard(input: NewCardInput!): Card! @authenticated
     editCard(input: CardInput!): Card! @authenticated
     deleteCard(ID: String!): Boolean! @authenticated
+    createCardsFromText(input: NewCardInputFromText): [Card]! @authenticated
 }
 `, BuiltIn: false},
 	{Name: "../models/course.graphqls", Input: `type Course {
@@ -530,6 +551,21 @@ func (ec *executionContext) field_Mutation_createCard_args(ctx context.Context, 
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalNNewCardInput2gingonicᚋgraphᚐNewCardInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_createCardsFromText_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.NewCardInputFromText
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalONewCardInputFromText2ᚖgingonicᚋgraphᚐNewCardInputFromText(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1352,6 +1388,91 @@ func (ec *executionContext) fieldContext_Mutation_deleteCard(ctx context.Context
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_deleteCard_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createCardsFromText(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_createCardsFromText(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().CreateCardsFromText(rctx, fc.Args["input"].(*model.NewCardInputFromText))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticated == nil {
+				return nil, errors.New("directive authenticated is not implemented")
+			}
+			return ec.directives.Authenticated(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.([]*model.Card); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*gingonic/graph.Card`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Card)
+	fc.Result = res
+	return ec.marshalNCard2ᚕᚖgingonicᚋgraphᚐCard(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createCardsFromText(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Card_id(ctx, field)
+			case "terminology":
+				return ec.fieldContext_Card_terminology(ctx, field)
+			case "definition":
+				return ec.fieldContext_Card_definition(ctx, field)
+			case "courseId":
+				return ec.fieldContext_Card_courseId(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Card", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createCardsFromText_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -4316,6 +4437,42 @@ func (ec *executionContext) unmarshalInputNewCardInput(ctx context.Context, obj 
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputNewCardInputFromText(ctx context.Context, obj interface{}) (model.NewCardInputFromText, error) {
+	var it model.NewCardInputFromText
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"courseId", "text"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "courseId":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("courseId"))
+			it.CourseID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "text":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("text"))
+			it.Text, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputNewCourseInput(ctx context.Context, obj interface{}) (model.NewCourseInput, error) {
 	var it model.NewCourseInput
 	asMap := map[string]interface{}{}
@@ -4543,6 +4700,15 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_deleteCard(ctx, field)
+			})
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "createCardsFromText":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createCardsFromText(ctx, field)
 			})
 
 			if out.Values[i] == graphql.Null {
@@ -5656,6 +5822,14 @@ func (ec *executionContext) marshalOCourse2ᚖgingonicᚋgraphᚐCourse(ctx cont
 		return graphql.Null
 	}
 	return ec._Course(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalONewCardInputFromText2ᚖgingonicᚋgraphᚐNewCardInputFromText(ctx context.Context, v interface{}) (*model.NewCardInputFromText, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputNewCardInputFromText(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {

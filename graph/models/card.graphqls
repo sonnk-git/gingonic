@@ -11,6 +11,11 @@ input NewCardInput {
     definition: String
 }
 
+input NewCardInputFromText {
+    courseId: String!
+    text: String!
+}
+
 input CardInput {
     id: ID!
     terminology: String
@@ -26,4 +31,5 @@ extend type Mutation {
     createCard(input: NewCardInput!): Card! @authenticated
     editCard(input: CardInput!): Card! @authenticated
     deleteCard(ID: String!): Boolean! @authenticated
+    createCardsFromText(input: NewCardInputFromText): [Card]! @authenticated
 }

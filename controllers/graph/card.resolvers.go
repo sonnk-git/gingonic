@@ -9,7 +9,9 @@ import (
 	"gingonic/db"
 	model "gingonic/graph"
 	OrmModels "gingonic/models"
+
 	"github.com/vektah/gqlparser/v2/gqlerror"
+	"strings"
 )
 
 // CreateCard is the resolver for the createCard field.
@@ -112,6 +114,39 @@ func (r *mutationResolver) DeleteCard(ctx context.Context, id string) (bool, err
 	}
 
 	return true, nil
+}
+
+// CreateCardsFromText is the resolver for the createCardsFromText field.
+func (r *mutationResolver) CreateCardsFromText(ctx context.Context, input *model.NewCardInputFromText) ([]*model.Card, error) {
+	text := strings.Split(input.Text, "\n")
+	var textResult [][]string
+
+	for k, _ := range text{
+		textResult = append(textResult, strings.Split(text[k],"\t"))
+	}
+
+	var cards []OrmModels.Card
+	isError := false
+	for _, v := range textResult {
+		if len(v) == 2 {
+			cards = append(cards, OrmModels.Card{
+				Terminology: v[0],
+				Definition:  v[1],
+				CourseID:    input.CourseID,
+			})
+		} else {
+			isError = true
+			break
+		}
+	}
+	if !isError {
+		tx := db.Orm.Create(cards)
+		if tx.Error != nil {
+			return nil, gqlerror.Errorf("Error when insert multiple cards to db, %v", tx.Error)
+		}
+	}
+
+	return nil, gqlerror.Errorf("Text input incorrect, please copy and try again.")
 }
 
 // GetCards is the resolver for the getCards field.
