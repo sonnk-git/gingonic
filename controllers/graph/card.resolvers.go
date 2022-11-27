@@ -5,6 +5,7 @@ package graph
 
 import (
 	"context"
+	"fmt"
 	"gingonic/db"
 	model "gingonic/graph"
 	OrmModels "gingonic/models"
@@ -132,15 +133,16 @@ func (r *queryResolver) GetCards(ctx context.Context, courseID *string) ([]*mode
 	var cards []OrmModels.Card
 	var cardsGQL []*model.Card
 	tx = db.Orm.Where("course_id = ?", courseID).Find(&cards)
+	fmt.Printf("%+v\n", cards)
 	if tx.Error != nil {
 		return nil, gqlerror.Errorf("Error when get cards in GetCards")
 	}
-	for _, v := range cards {
+	for k, _ := range cards {
 		cardsGQL = append(cardsGQL, &model.Card{
-			ID:          v.ID,
-			Terminology: &v.Terminology,
-			Definition:  &v.Definition,
-			CourseID:    v.CourseID,
+			ID:          cards[k].ID,
+			Terminology: &cards[k].Terminology,
+			Definition:  &cards[k].Definition,
+			CourseID:    cards[k].CourseID,
 		})
 	}
 
