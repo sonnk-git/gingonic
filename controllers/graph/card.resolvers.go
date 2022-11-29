@@ -140,13 +140,22 @@ func (r *mutationResolver) CreateCardsFromText(ctx context.Context, input *model
 		}
 	}
 	if !isError {
-		tx := db.Orm.Create(cards)
+		tx := db.Orm.Create(&cards)
 		if tx.Error != nil {
 			return nil, gqlerror.Errorf("Error when insert multiple cards to db, %v", tx.Error)
 		}
 	}
+	var cardsGQL []*model.Card
+	for _, v := range cards {
+		cardsGQL = append(cardsGQL, &model.Card{
+			ID:          v.ID,
+			Terminology: &v.Terminology,
+			Definition:  &v.Definition,
+			CourseID:    v.CourseID,
+		})
+	}
 
-	return nil, gqlerror.Errorf("Text input incorrect, please copy and try again.")
+	return cardsGQL, nil
 }
 
 // GetCards is the resolver for the getCards field.
