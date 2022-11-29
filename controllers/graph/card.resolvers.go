@@ -9,9 +9,9 @@ import (
 	"gingonic/db"
 	model "gingonic/graph"
 	OrmModels "gingonic/models"
+	"strings"
 
 	"github.com/vektah/gqlparser/v2/gqlerror"
-	"strings"
 )
 
 // CreateCard is the resolver for the createCard field.
@@ -118,11 +118,29 @@ func (r *mutationResolver) DeleteCard(ctx context.Context, id string) (bool, err
 
 // CreateCardsFromText is the resolver for the createCardsFromText field.
 func (r *mutationResolver) CreateCardsFromText(ctx context.Context, input *model.NewCardInputFromText) ([]*model.Card, error) {
+	user, err := GetUserFromContext(ctx)
+	if err != nil {
+		return nil, gqlerror.Errorf("Error when get user from context")
+	}
 	text := strings.Split(input.Text, "\n")
 	var textResult [][]string
 
-	for k, _ := range text{
-		textResult = append(textResult, strings.Split(text[k],"\t"))
+	for k, _ := range text {
+		textResult = append(textResult, strings.Split(text[k], "\t"))
+	}
+
+	dbInstance := db.Orm.Begin()
+
+	course := OrmModels.Course{
+		Name:        input.Name,
+		Description: *input.Description,
+		UserID: user.ID,
+	}
+
+	tx := dbInstance.Create(&course)
+	if tx.Error != nil {
+		dbInstance.Rollback()
+		return nil, gqlerror.Errorf("Error when create course to db in CreateCardsFromText, %v", tx.Error)
 	}
 
 	var cards []OrmModels.Card
@@ -132,7 +150,7 @@ func (r *mutationResolver) CreateCardsFromText(ctx context.Context, input *model
 			cards = append(cards, OrmModels.Card{
 				Terminology: v[0],
 				Definition:  v[1],
-				CourseID:    input.CourseID,
+				CourseID:    course.ID,
 			})
 		} else {
 			isError = true
@@ -142,9 +160,15 @@ func (r *mutationResolver) CreateCardsFromText(ctx context.Context, input *model
 	if !isError {
 		tx := db.Orm.Create(&cards)
 		if tx.Error != nil {
+			dbInstance.Rollback()
 			return nil, gqlerror.Errorf("Error when insert multiple cards to db, %v", tx.Error)
 		}
+	} else {
+		dbInstance.Rollback()
+		return nil, gqlerror.Errorf("Input from clipboard is invalid")
 	}
+	dbInstance.Commit()
+
 	var cardsGQL []*model.Card
 	for _, v := range cards {
 		cardsGQL = append(cardsGQL, &model.Card{

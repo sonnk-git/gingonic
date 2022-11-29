@@ -465,7 +465,8 @@ input NewCardInput {
 }
 
 input NewCardInputFromText {
-    courseId: String!
+    name: String!
+    description: String
     text: String!
 }
 
@@ -4444,18 +4445,26 @@ func (ec *executionContext) unmarshalInputNewCardInputFromText(ctx context.Conte
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"courseId", "text"}
+	fieldsInOrder := [...]string{"name", "description", "text"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
-		case "courseId":
+		case "name":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("courseId"))
-			it.CourseID, err = ec.unmarshalNString2string(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "description":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}

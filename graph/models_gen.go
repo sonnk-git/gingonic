@@ -35,8 +35,9 @@ type NewCardInput struct {
 }
 
 type NewCardInputFromText struct {
-	CourseID string `json:"courseId"`
-	Text     string `json:"text"`
+	Name        string  `json:"name"`
+	Description *string `json:"description"`
+	Text        string  `json:"text"`
 }
 
 type NewCourseInput struct {
