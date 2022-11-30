@@ -129,21 +129,18 @@ func (r *mutationResolver) CreateCardsFromText(ctx context.Context, input *model
 		textResult = append(textResult, strings.Split(text[k], "\t"))
 	}
 
-	dbInstance := db.Orm.Begin()
-
 	course := OrmModels.Course{
 		Name:        input.Name,
 		Description: *input.Description,
 		UserID: user.ID,
 	}
+	var cards []OrmModels.Card
 
-	tx := dbInstance.Create(&course)
+	tx := db.Orm.Create(&course)
 	if tx.Error != nil {
-		dbInstance.Rollback()
-		return nil, gqlerror.Errorf("Error when create course to db in CreateCardsFromText, %v", tx.Error)
+		return nil, tx.Error
 	}
 
-	var cards []OrmModels.Card
 	isError := false
 	for _, v := range textResult {
 		if len(v) == 2 {
@@ -160,14 +157,11 @@ func (r *mutationResolver) CreateCardsFromText(ctx context.Context, input *model
 	if !isError {
 		tx := db.Orm.Create(&cards)
 		if tx.Error != nil {
-			dbInstance.Rollback()
 			return nil, gqlerror.Errorf("Error when insert multiple cards to db, %v", tx.Error)
 		}
 	} else {
-		dbInstance.Rollback()
 		return nil, gqlerror.Errorf("Input from clipboard is invalid")
 	}
-	dbInstance.Commit()
 
 	var cardsGQL []*model.Card
 	for _, v := range cards {
