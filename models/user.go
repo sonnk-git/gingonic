@@ -10,9 +10,11 @@ func init() {
 
 type User struct {
 	BaseUuid
-	Name     string `json:"name,omitempty"`
-	Email    string `gorm:"unique" json:"email,omitempty"`
-	Password string `json:"password,omitempty"`
-	Courses  []Course
+	Name           string `json:"name,omitempty"`
+	Email          string `gorm:"unique" json:"email,omitempty"`
+	Password       string `json:"password,omitempty"`
+	Subscription   string `json:"subscription,omitempty"`
+	SubscribeState bool   `json:"subscribe_state,omitempty"`
+	Courses        []Course
 	Base
 }

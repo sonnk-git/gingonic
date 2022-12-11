@@ -31,5 +31,6 @@ func AutoMigrate(DB *gorm.DB) error {
 		User{},
 		Course{},
 		Card{},
+		Subscription{},
 	)
 }
