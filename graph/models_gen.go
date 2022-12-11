@@ -51,9 +51,25 @@ type NewUser struct {
 	Password string `json:"password"`
 }
 
+type Notification struct {
+	ID             string  `json:"id"`
+	UserID         string  `json:"userID"`
+	CourseID       *string `json:"courseID"`
+	Sub            *string `json:"sub"`
+	SubscribeState *bool   `json:"subscribeState"`
+	EveryMinute    *int    `json:"everyMinute"`
+}
+
 type User struct {
 	ID       string `json:"id"`
 	Username string `json:"username"`
 	Password string `json:"password"`
 	Email    string `json:"email"`
+}
+
+type NotificationRequest struct {
+	CourseID       *string `json:"courseID"`
+	Sub            *string `json:"sub"`
+	SubscribeState *bool   `json:"subscribeState"`
+	EveryMinute    *int    `json:"everyMinute"`
 }

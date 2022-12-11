@@ -132,7 +132,7 @@ func (r *mutationResolver) CreateCardsFromText(ctx context.Context, input *model
 	course := OrmModels.Course{
 		Name:        input.Name,
 		Description: *input.Description,
-		UserID: user.ID,
+		UserID:      user.ID,
 	}
 	var cards []OrmModels.Card
 

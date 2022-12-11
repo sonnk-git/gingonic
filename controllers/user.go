@@ -125,7 +125,7 @@ func SetSubscribe(ctx *gin.Context) {
 	if tx.Error != nil {
 		ctx.IndentedJSON(http.StatusBadRequest, gin.H{
 			"status": false,
-			"error": tx.Error.Error(),
+			"error":  tx.Error.Error(),
 		})
 		return
 	}
@@ -135,7 +135,7 @@ func SetSubscribe(ctx *gin.Context) {
 		db.Orm.Save(&sub)
 	} else {
 		ctx.IndentedJSON(http.StatusBadRequest, gin.H{
-			"status": false,
+			"status":  false,
 			"message": "cannot get subscription, please subscribe first.",
 		})
 		return
@@ -143,6 +143,6 @@ func SetSubscribe(ctx *gin.Context) {
 
 	ctx.IndentedJSON(http.StatusOK, gin.H{
 		"status": true,
-		"state": sub.SubscribeState,
+		"state":  sub.SubscribeState,
 	})
 }

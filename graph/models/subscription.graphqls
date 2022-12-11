@@ -1,0 +1,23 @@
+type Notification {
+    id: ID!
+    userID: String!
+    courseID: String
+    sub: String
+    subscribeState: Boolean
+    everyMinute: Int
+}
+
+input notificationRequest {
+    courseID: String
+    sub: String
+    subscribeState: Boolean
+    everyMinute: Int
+}
+
+extend type Query {
+    getSubscription: Notification!
+}
+
+extend type Mutation {
+    setSubscribe(input: notificationRequest!): Notification!
+}

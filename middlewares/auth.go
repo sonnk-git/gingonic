@@ -36,7 +36,7 @@ func Build(user models.User) (string, error) {
 	// you would like it to contain.
 	claims := jwt.MapClaims{
 		"iat":   time.Now().Unix(),
-		"exp":   time.Now().Add(24*60 * time.Minute).Unix(),
+		"exp":   time.Now().Add(24 * 60 * time.Minute).Unix(),
 		"id":    user.ID,
 		"name":  user.Name,
 		"email": user.Email,
