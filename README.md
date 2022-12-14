@@ -29,3 +29,5 @@
           cd scheduler
           go run main.go
           ```
+3.  **Frontend Source.**
+  https://github.com/khacsonit/flashcard_maker
