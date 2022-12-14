@@ -9,10 +9,13 @@
 ## 🚀 Quick start
 
 1.  **Config.**
-
-    Edit .env
+     + Create .env file 
+          ```shell
+          cp .env-example .env
+          ```
+       Edit .env
     
-    Generating VAPID Keys: https://github.com/SherClockHolmes/webpush-go
+     + Generating VAPID Keys: https://github.com/SherClockHolmes/webpush-go
     
 2.  **Start.**
 
