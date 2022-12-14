@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"gingonic/controllers"
 	"gingonic/middlewares"
 	"gingonic/route/api/v1/auth"
 	"gingonic/route/api/v1/user"
@@ -17,6 +18,7 @@ func Register(r *gin.RouterGroup) {
 	public.GET("/", func(c *gin.Context) {
 		c.IndentedJSON(http.StatusOK, struct{}{})
 	})
+	public.POST("/send-notification", controllers.SendNotification)
 	public = auth.Route(public)
 
 	/* ---------------------------  Private routes  --------------------------- */

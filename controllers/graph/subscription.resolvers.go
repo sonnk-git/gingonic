@@ -25,7 +25,9 @@ func (r *mutationResolver) SetSubscribe(ctx context.Context, input model.Notific
 		return nil, gqlerror.Errorf("Error when find subscription in db")
 	}
 
-	sub.EveryMinute = 1
+	if input.EveryMinute != nil {
+		sub.EveryMinute = *input.EveryMinute
+	}
 
 	if input.SubscribeState != nil {
 		sub.SubscribeState = *input.SubscribeState
@@ -47,6 +49,7 @@ func (r *mutationResolver) SetSubscribe(ctx context.Context, input model.Notific
 			return nil, gqlerror.Errorf("Error when save subscription in db")
 		}
 	} else {
+		sub.EveryMinute = 1
 		sub.UserID = user.ID
 		tx := db.Orm.Create(&sub)
 		if tx.Error != nil {
