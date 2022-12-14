@@ -24,7 +24,7 @@
          ```shell
           make dev-server
           ```
-     + Start scheduler:
+     + Create new terminal, start scheduler(cronjob):
           ```shell
           cd scheduler
           go run main.go
