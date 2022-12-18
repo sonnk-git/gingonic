@@ -9,7 +9,11 @@
 ## Requirement
 
   - Golang version: 1.18.9 ^
-  - Postgres DB is installed 
+  - Postgres DB is installed
+  - Frontend Source
+
+    https://github.com/khacsonit/flashcard_maker 
+    
 
 ## 🚀 Quick start
 
@@ -57,6 +61,3 @@
           cd scheduler
           go run main.go
           ```
-3.  **Frontend Source.**
-
-    https://github.com/khacsonit/flashcard_maker
