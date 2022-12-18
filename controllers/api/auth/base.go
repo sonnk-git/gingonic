@@ -69,6 +69,7 @@ func Register(c *gin.Context) {
 	if tx.Error != nil {
 		_ = c.Error(tx.Error)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"status": false, "message": tx.Error.Error()})
+		return
 	}
 
 	c.IndentedJSON(http.StatusOK, gin.H{
