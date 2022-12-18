@@ -17,7 +17,7 @@
 
 ## 🚀 Quick start
 
-1.  **Config.**
+1.  **Config**
      + In root directory
      
           ```shell
