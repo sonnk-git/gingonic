@@ -122,11 +122,11 @@ func (r *mutationResolver) CreateCardsFromText(ctx context.Context, input *model
 	if err != nil {
 		return nil, gqlerror.Errorf("Error when get user from context")
 	}
-	text := strings.Split(input.Text, "\n")
+	text := strings.Split(input.Text, "\n\n\n")
 	var textResult [][]string
 
 	for k, _ := range text {
-		textResult = append(textResult, strings.Split(text[k], "\t"))
+		textResult = append(textResult, strings.Split(text[k], "---"))
 	}
 
 	course := OrmModels.Course{
