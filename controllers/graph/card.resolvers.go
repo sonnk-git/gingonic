@@ -125,7 +125,7 @@ func (r *mutationResolver) CreateCardsFromText(ctx context.Context, input *model
 	text := strings.Split(input.Text, "\n\n\n")
 	var textResult [][]string
 
-	for k, _ := range text {
+	for k := range text {
 		textResult = append(textResult, strings.Split(text[k], "---"))
 	}
 
@@ -199,7 +199,7 @@ func (r *queryResolver) GetCards(ctx context.Context, courseID *string) ([]*mode
 	if tx.Error != nil {
 		return nil, gqlerror.Errorf("Error when get cards in GetCards")
 	}
-	for k, _ := range cards {
+	for k := range cards {
 		cardsGQL = append(cardsGQL, &model.Card{
 			ID:          cards[k].ID,
 			Terminology: &cards[k].Terminology,

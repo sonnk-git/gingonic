@@ -117,7 +117,7 @@ func SendNotification(ctx *gin.Context) {
 			json.Unmarshal([]byte(v.Sub), s)
 
 			// Send Notification
-			resp, err = webpush.SendNotification([]byte(card.Terminology + " / " + card.Definition), s, &webpush.Options{
+			resp, err = webpush.SendNotification([]byte(card.Terminology+" / "+card.Definition), s, &webpush.Options{
 				Subscriber:      "example@example.com",
 				VAPIDPublicKey:  vapidPublicKey,
 				VAPIDPrivateKey: vapidPrivateKey,
