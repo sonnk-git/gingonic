@@ -241,3 +241,61 @@ func (r *queryResolver) GetCard(ctx context.Context, id string) (*model.Card, er
 
 	return &cardORM, nil
 }
+
+// GetCardsWithCursor is the resolver for the getCardsWithCursor field.
+func (r *queryResolver) GetCardsWithCursor(ctx context.Context, input *model.GetCardsInput) (*model.GetCardsResponse, error) {
+	user, err := GetUserFromContext(ctx)
+	if err != nil {
+		return nil, gqlerror.Errorf("Error when get user from context")
+	}
+
+	course := &OrmModels.Course{}
+	tx := db.Orm.First(course, "id = ?", input.CourseID)
+	if tx.Error != nil || tx.RowsAffected < 1 {
+		return nil, gqlerror.Errorf("Error when get course in GetCards")
+	}
+	if user.ID != course.UserID {
+		return nil, gqlerror.Errorf("User not allow to get cards to this course")
+	}
+
+	var cards []OrmModels.Card
+	tx = db.Orm.Limit(input.Pagination.Limit + 1)
+
+	if input.Pagination.Cursor != nil {
+		// Todo: check Cursor is valid
+		tx = tx.Where("id > ?", *input.Pagination.Cursor)
+	}
+	tx = tx.Where("course_id = ?", course.ID).Order("id ASC").Find(&cards)
+
+	if tx.Error != nil {
+		return nil, gqlerror.Errorf("Error when get cards in GetCards")
+	}
+
+	b := false
+	lastCard := cards[len(cards)-1]
+	if tx.RowsAffected > int64(input.Pagination.Limit) {
+		b = true
+		lastCard = cards[len(cards)-2]
+		cards = cards[:len(cards)-1]
+	}
+
+	var cardsGQL []*model.Card
+	for k := range cards {
+		cardsGQL = append(cardsGQL, &model.Card{
+			ID:          cards[k].ID,
+			Terminology: &cards[k].Terminology,
+			Definition:  &cards[k].Definition,
+			CourseID:    cards[k].CourseID,
+		})
+	}
+
+	res := model.GetCardsResponse{
+		Data: cardsGQL,
+		PageInfo: &model.PageInfo{
+			Cursor:      lastCard.ID,
+			HasNextPage: &b,
+		},
+	}
+
+	return &res, nil
+}

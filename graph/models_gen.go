@@ -28,6 +28,16 @@ type CourseInput struct {
 	Description string `json:"description"`
 }
 
+type GetCardsInput struct {
+	CourseID   *string          `json:"courseID"`
+	Pagination *PaginationInput `json:"pagination"`
+}
+
+type GetCardsResponse struct {
+	Data     []*Card   `json:"data"`
+	PageInfo *PageInfo `json:"pageInfo"`
+}
+
 type NewCardInput struct {
 	CourseID    string  `json:"courseId"`
 	Terminology *string `json:"terminology"`
@@ -58,6 +68,16 @@ type Notification struct {
 	Sub            *string `json:"sub"`
 	SubscribeState *bool   `json:"subscribeState"`
 	EveryMinute    *int    `json:"everyMinute"`
+}
+
+type PageInfo struct {
+	Cursor      string `json:"cursor"`
+	HasNextPage *bool  `json:"hasNextPage"`
+}
+
+type PaginationInput struct {
+	Cursor *string `json:"cursor"`
+	Limit  int     `json:"limit"`
 }
 
 type User struct {

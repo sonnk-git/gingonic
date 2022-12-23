@@ -23,9 +23,21 @@ input CardInput {
     definition: String
 }
 
+input GetCardsInput {
+    courseID: String
+    pagination: PaginationInput
+#    To do: maybe need filter: by id, by type, sort by, etc.
+}
+
+type GetCardsResponse {
+    data: [Card]!
+    pageInfo: PageInfo
+}
+
 extend type Query {
     getCards(CourseID: String): [Card]! @authenticated
     getCard(ID: String!): Card @authenticated
+    getCardsWithCursor(input: GetCardsInput): GetCardsResponse! @authenticated
 }
 
 extend type Mutation {

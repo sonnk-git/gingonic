@@ -59,6 +59,11 @@ type ComplexityRoot struct {
 		UserID      func(childComplexity int) int
 	}
 
+	GetCardsResponse struct {
+		Data     func(childComplexity int) int
+		PageInfo func(childComplexity int) int
+	}
+
 	Mutation struct {
 		CreateCard          func(childComplexity int, input model.NewCardInput) int
 		CreateCardsFromText func(childComplexity int, input *model.NewCardInputFromText) int
@@ -81,14 +86,20 @@ type ComplexityRoot struct {
 		UserID         func(childComplexity int) int
 	}
 
+	PageInfo struct {
+		Cursor      func(childComplexity int) int
+		HasNextPage func(childComplexity int) int
+	}
+
 	Query struct {
-		GetCard         func(childComplexity int, id string) int
-		GetCards        func(childComplexity int, courseID *string) int
-		GetCourse       func(childComplexity int, id string) int
-		GetCourses      func(childComplexity int) int
-		GetSubscription func(childComplexity int) int
-		NoOp            func(childComplexity int) int
-		Users           func(childComplexity int) int
+		GetCard            func(childComplexity int, id string) int
+		GetCards           func(childComplexity int, courseID *string) int
+		GetCardsWithCursor func(childComplexity int, input *model.GetCardsInput) int
+		GetCourse          func(childComplexity int, id string) int
+		GetCourses         func(childComplexity int) int
+		GetSubscription    func(childComplexity int) int
+		NoOp               func(childComplexity int) int
+		Users              func(childComplexity int) int
 	}
 
 	User struct {
@@ -115,6 +126,7 @@ type QueryResolver interface {
 	NoOp(ctx context.Context) (*bool, error)
 	GetCards(ctx context.Context, courseID *string) ([]*model.Card, error)
 	GetCard(ctx context.Context, id string) (*model.Card, error)
+	GetCardsWithCursor(ctx context.Context, input *model.GetCardsInput) (*model.GetCardsResponse, error)
 	GetCourses(ctx context.Context) ([]*model.Course, error)
 	GetCourse(ctx context.Context, id string) (*model.Course, error)
 	GetSubscription(ctx context.Context) (*model.Notification, error)
@@ -191,6 +203,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Course.UserID(childComplexity), true
+
+	case "GetCardsResponse.data":
+		if e.complexity.GetCardsResponse.Data == nil {
+			break
+		}
+
+		return e.complexity.GetCardsResponse.Data(childComplexity), true
+
+	case "GetCardsResponse.pageInfo":
+		if e.complexity.GetCardsResponse.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.GetCardsResponse.PageInfo(childComplexity), true
 
 	case "Mutation.createCard":
 		if e.complexity.Mutation.CreateCard == nil {
@@ -349,6 +375,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Notification.UserID(childComplexity), true
 
+	case "PageInfo.cursor":
+		if e.complexity.PageInfo.Cursor == nil {
+			break
+		}
+
+		return e.complexity.PageInfo.Cursor(childComplexity), true
+
+	case "PageInfo.hasNextPage":
+		if e.complexity.PageInfo.HasNextPage == nil {
+			break
+		}
+
+		return e.complexity.PageInfo.HasNextPage(childComplexity), true
+
 	case "Query.getCard":
 		if e.complexity.Query.GetCard == nil {
 			break
@@ -372,6 +412,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.GetCards(childComplexity, args["CourseID"].(*string)), true
+
+	case "Query.getCardsWithCursor":
+		if e.complexity.Query.GetCardsWithCursor == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getCardsWithCursor_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetCardsWithCursor(childComplexity, args["input"].(*model.GetCardsInput)), true
 
 	case "Query.getCourse":
 		if e.complexity.Query.GetCourse == nil {
@@ -451,10 +503,12 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
 		ec.unmarshalInputCardInput,
 		ec.unmarshalInputCourseInput,
+		ec.unmarshalInputGetCardsInput,
 		ec.unmarshalInputNewCardInput,
 		ec.unmarshalInputNewCardInputFromText,
 		ec.unmarshalInputNewCourseInput,
 		ec.unmarshalInputNewUser,
+		ec.unmarshalInputPaginationInput,
 		ec.unmarshalInputnotificationRequest,
 	)
 	first := true
@@ -551,9 +605,21 @@ input CardInput {
     definition: String
 }
 
+input GetCardsInput {
+    courseID: String
+    pagination: PaginationInput
+#    To do: maybe need filter: by id, by type, sort by, etc.
+}
+
+type GetCardsResponse {
+    data: [Card]!
+    pageInfo: PageInfo
+}
+
 extend type Query {
     getCards(CourseID: String): [Card]! @authenticated
     getCard(ID: String!): Card @authenticated
+    getCardsWithCursor(input: GetCardsInput): GetCardsResponse! @authenticated
 }
 
 extend type Mutation {
@@ -590,6 +656,16 @@ extend type Mutation {
     createCourse(input: NewCourseInput!): Course! @authenticated
     editCourse(input: CourseInput!): Course! @authenticated
     deleteCourse(ID: String!): Boolean! @authenticated
+}
+`, BuiltIn: false},
+	{Name: "../models/input.graphqls", Input: `input PaginationInput {
+    cursor: String
+    limit: Int!
+}
+`, BuiltIn: false},
+	{Name: "../models/page_info.graphqls", Input: `type PageInfo {
+    cursor: String!
+    hasNextPage: Boolean
 }
 `, BuiltIn: false},
 	{Name: "../models/subscription.graphqls", Input: `type Notification {
@@ -806,6 +882,21 @@ func (ec *executionContext) field_Query_getCard_args(ctx context.Context, rawArg
 		}
 	}
 	args["ID"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_getCardsWithCursor_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.GetCardsInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalOGetCardsInput2ᚖgingonicᚋgraphᚐGetCardsInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
 	return args, nil
 }
 
@@ -1218,6 +1309,107 @@ func (ec *executionContext) fieldContext_Course_description(ctx context.Context,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GetCardsResponse_data(ctx context.Context, field graphql.CollectedField, obj *model.GetCardsResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GetCardsResponse_data(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Data, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Card)
+	fc.Result = res
+	return ec.marshalNCard2ᚕᚖgingonicᚋgraphᚐCard(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GetCardsResponse_data(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GetCardsResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Card_id(ctx, field)
+			case "terminology":
+				return ec.fieldContext_Card_terminology(ctx, field)
+			case "definition":
+				return ec.fieldContext_Card_definition(ctx, field)
+			case "courseId":
+				return ec.fieldContext_Card_courseId(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Card", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GetCardsResponse_pageInfo(ctx context.Context, field graphql.CollectedField, obj *model.GetCardsResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GetCardsResponse_pageInfo(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.PageInfo)
+	fc.Result = res
+	return ec.marshalOPageInfo2ᚖgingonicᚋgraphᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GetCardsResponse_pageInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GetCardsResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "cursor":
+				return ec.fieldContext_PageInfo_cursor(ctx, field)
+			case "hasNextPage":
+				return ec.fieldContext_PageInfo_hasNextPage(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PageInfo", field.Name)
 		},
 	}
 	return fc, nil
@@ -2225,6 +2417,91 @@ func (ec *executionContext) fieldContext_Notification_everyMinute(ctx context.Co
 	return fc, nil
 }
 
+func (ec *executionContext) _PageInfo_cursor(ctx context.Context, field graphql.CollectedField, obj *model.PageInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PageInfo_cursor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PageInfo_cursor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PageInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PageInfo_hasNextPage(ctx context.Context, field graphql.CollectedField, obj *model.PageInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PageInfo_hasNextPage(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HasNextPage, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PageInfo_hasNextPage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PageInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_NoOp(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_NoOp(ctx, field)
 	if err != nil {
@@ -2427,6 +2704,87 @@ func (ec *executionContext) fieldContext_Query_getCard(ctx context.Context, fiel
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_getCard_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_getCardsWithCursor(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_getCardsWithCursor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().GetCardsWithCursor(rctx, fc.Args["input"].(*model.GetCardsInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Authenticated == nil {
+				return nil, errors.New("directive authenticated is not implemented")
+			}
+			return ec.directives.Authenticated(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.GetCardsResponse); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *gingonic/graph.GetCardsResponse`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.GetCardsResponse)
+	fc.Result = res
+	return ec.marshalNGetCardsResponse2ᚖgingonicᚋgraphᚐGetCardsResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_getCardsWithCursor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "data":
+				return ec.fieldContext_GetCardsResponse_data(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_GetCardsResponse_pageInfo(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type GetCardsResponse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_getCardsWithCursor_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -4887,6 +5245,42 @@ func (ec *executionContext) unmarshalInputCourseInput(ctx context.Context, obj i
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputGetCardsInput(ctx context.Context, obj interface{}) (model.GetCardsInput, error) {
+	var it model.GetCardsInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"courseID", "pagination"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "courseID":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("courseID"))
+			it.CourseID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "pagination":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+			it.Pagination, err = ec.unmarshalOPaginationInput2ᚖgingonicᚋgraphᚐPaginationInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputNewCardInput(ctx context.Context, obj interface{}) (model.NewCardInput, error) {
 	var it model.NewCardInput
 	asMap := map[string]interface{}{}
@@ -5055,6 +5449,42 @@ func (ec *executionContext) unmarshalInputNewUser(ctx context.Context, obj inter
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputPaginationInput(ctx context.Context, obj interface{}) (model.PaginationInput, error) {
+	var it model.PaginationInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"cursor", "limit"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "cursor":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cursor"))
+			it.Cursor, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "limit":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+			it.Limit, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputnotificationRequest(ctx context.Context, obj interface{}) (model.NotificationRequest, error) {
 	var it model.NotificationRequest
 	asMap := map[string]interface{}{}
@@ -5196,6 +5626,38 @@ func (ec *executionContext) _Course(ctx context.Context, sel ast.SelectionSet, o
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var getCardsResponseImplementors = []string{"GetCardsResponse"}
+
+func (ec *executionContext) _GetCardsResponse(ctx context.Context, sel ast.SelectionSet, obj *model.GetCardsResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, getCardsResponseImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("GetCardsResponse")
+		case "data":
+
+			out.Values[i] = ec._GetCardsResponse_data(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "pageInfo":
+
+			out.Values[i] = ec._GetCardsResponse_pageInfo(ctx, field, obj)
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5375,6 +5837,38 @@ func (ec *executionContext) _Notification(ctx context.Context, sel ast.Selection
 	return out
 }
 
+var pageInfoImplementors = []string{"PageInfo"}
+
+func (ec *executionContext) _PageInfo(ctx context.Context, sel ast.SelectionSet, obj *model.PageInfo) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, pageInfoImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PageInfo")
+		case "cursor":
+
+			out.Values[i] = ec._PageInfo_cursor(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "hasNextPage":
+
+			out.Values[i] = ec._PageInfo_hasNextPage(ctx, field, obj)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var queryImplementors = []string{"Query"}
 
 func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -5447,6 +5941,29 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_getCard(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "getCardsWithCursor":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getCardsWithCursor(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			}
 
@@ -6065,6 +6582,20 @@ func (ec *executionContext) unmarshalNCourseInput2gingonicᚋgraphᚐCourseInput
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNGetCardsResponse2gingonicᚋgraphᚐGetCardsResponse(ctx context.Context, sel ast.SelectionSet, v model.GetCardsResponse) graphql.Marshaler {
+	return ec._GetCardsResponse(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNGetCardsResponse2ᚖgingonicᚋgraphᚐGetCardsResponse(ctx context.Context, sel ast.SelectionSet, v *model.GetCardsResponse) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._GetCardsResponse(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface{}) (string, error) {
 	res, err := graphql.UnmarshalID(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -6072,6 +6603,21 @@ func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface
 
 func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
 	res := graphql.MarshalID(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
+	res, err := graphql.UnmarshalInt(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	res := graphql.MarshalInt(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -6480,6 +7026,14 @@ func (ec *executionContext) marshalOCourse2ᚖgingonicᚋgraphᚐCourse(ctx cont
 	return ec._Course(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalOGetCardsInput2ᚖgingonicᚋgraphᚐGetCardsInput(ctx context.Context, v interface{}) (*model.GetCardsInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputGetCardsInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {
 	if v == nil {
 		return nil, nil
@@ -6501,6 +7055,21 @@ func (ec *executionContext) unmarshalONewCardInputFromText2ᚖgingonicᚋgraph�
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputNewCardInputFromText(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOPageInfo2ᚖgingonicᚋgraphᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v *model.PageInfo) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._PageInfo(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOPaginationInput2ᚖgingonicᚋgraphᚐPaginationInput(ctx context.Context, v interface{}) (*model.PaginationInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputPaginationInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
