@@ -29,12 +29,12 @@
          cp .env-example .env
          ```
 
-      Edit .env
+    + Edit .env
 
-    + Generating VAPID Keys: https://github.com/SherClockHolmes/webpush-go (We have VAPID_PUBLIC_KEY and
-      VAPID_PRIVATE_KEY, you must put it into .env)
+      + Generating VAPID Keys: https://github.com/SherClockHolmes/webpush-go (We have VAPID_PUBLIC_KEY and
+        VAPID_PRIVATE_KEY, you must put it into .env)
 
-    + Sample .env file
+      + Sample .env file
 
          ```shell
          MODE=debug
