@@ -58,6 +58,5 @@
          ```
     + Create new terminal, start scheduler(cronjob):
          ```shell
-         cd scheduler
-         go run main.go
+         make scheduler
          ```
