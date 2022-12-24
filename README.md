@@ -53,7 +53,7 @@
 
    In root directory:
     + Start server:
-        ```shell
+         ```shell
          make dev-server
          ```
     + Create new terminal, start scheduler(cronjob):
