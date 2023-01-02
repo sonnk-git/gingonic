@@ -14,7 +14,7 @@
 
   https://github.com/khacsonit/flashcard_maker
 
-## 🚀 Quick start
+## Quick start
 
 1. **Config**
     + In root directory
