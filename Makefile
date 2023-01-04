@@ -18,6 +18,9 @@ test-report:
 	go test ./... -v --cover -coverprofile=coverage.out
 	go tool cover -html=coverage.out
 
+hooks:
+	git config --local core.hooksPath $(shell pwd)/.githooks
+
 pre-commit-install:
 	pre-commit install
 
