@@ -18,11 +18,12 @@ test-report:
 	go test ./... -v --cover -coverprofile=coverage.out
 	go tool cover -html=coverage.out
 
+# Using hooks or pre-commit-install
 hooks:
 	git config --local core.hooksPath $(shell pwd)/.githooks
-
 pre-commit-install:
-	pre-commit install
+	git config --unset-all core.hooksPath && pre-commit install
 
+# Run pre checking commit
 pre-commit-run-all-files:
 	pre-commit run --all-files
