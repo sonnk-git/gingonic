@@ -6,4 +6,4 @@ fail() {
 }
 
 FILES=$(go list ./... | grep -v /vendor/) || fail
-go test -tags=unit -timeout 30s -short -v ${FILES} || fail
+go test ./... -v --cover ${FILES} || fail
