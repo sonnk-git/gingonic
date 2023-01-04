@@ -1,0 +1,16 @@
+repos:
+- repo: local
+  hooks:
+    - id: go-fmt
+      name: go-fmt
+      entry: ./bash/run-go-fmt.sh
+      language: 'script'
+      types: [go]
+    - id: golangci-lint
+      name: golangci-lint
+      entry: ./bash/run-golangci-lint.sh
+      language: 'script'
+    - id: go-unit-tests
+      name: go-unit-tests
+      entry: ./bash/run-go-unit-tests.sh
+      language: 'script'
