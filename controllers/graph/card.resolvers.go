@@ -123,7 +123,9 @@ func (r *mutationResolver) CreateCardsFromText(ctx context.Context, input *model
 		return nil, gqlerror.Errorf("Error when get user from context")
 	}
 	text := strings.Split(input.Text, "\n\n\n")
-	var textResult [][]string
+
+	//var textResult [][]string
+	textResult := make([][]string, 0, len(text))
 
 	for k := range text {
 		textResult = append(textResult, strings.Split(text[k], "---"))
@@ -163,13 +165,15 @@ func (r *mutationResolver) CreateCardsFromText(ctx context.Context, input *model
 		return nil, gqlerror.Errorf("Input from clipboard is invalid")
 	}
 
-	var cardsGQL []*model.Card
-	for _, v := range cards {
+	//var cardsGQL []*model.Card
+	cardsGQL := make([]*model.Card, 0, len(cards))
+
+	for i := range cards {
 		cardsGQL = append(cardsGQL, &model.Card{
-			ID:          v.ID,
-			Terminology: &v.Terminology,
-			Definition:  &v.Definition,
-			CourseID:    v.CourseID,
+			ID:          cards[i].ID,
+			Terminology: &cards[i].Terminology,
+			Definition:  &cards[i].Definition,
+			CourseID:    cards[i].CourseID,
 		})
 	}
 
@@ -193,9 +197,11 @@ func (r *queryResolver) GetCards(ctx context.Context, courseID *string) ([]*mode
 	}
 
 	var cards []OrmModels.Card
-	var cardsGQL []*model.Card
+	//var cardsGQL []*model.Card
 	tx = db.Orm.Where("course_id = ?", courseID).Find(&cards)
 	fmt.Printf("%+v\n", cards)
+	cardsGQL := make([]*model.Card, 0, len(cards))
+
 	if tx.Error != nil {
 		return nil, gqlerror.Errorf("Error when get cards in GetCards")
 	}
@@ -279,7 +285,8 @@ func (r *queryResolver) GetCardsWithCursor(ctx context.Context, input *model.Get
 		cards = cards[:len(cards)-1]
 	}
 
-	var cardsGQL []*model.Card
+	//var cardsGQL []*model.Card
+	cardsGQL := make([]*model.Card, 0, len(cards))
 	for k := range cards {
 		cardsGQL = append(cardsGQL, &model.Card{
 			ID:          cards[k].ID,

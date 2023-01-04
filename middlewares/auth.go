@@ -31,7 +31,6 @@ func Parse(tokenString string) (*jwt.Token, error) {
 }
 
 func Build(user models.User) (string, error) {
-
 	// Create a new token object, specifying signing method and the claims
 	// you would like it to contain.
 	claims := jwt.MapClaims{
@@ -107,9 +106,13 @@ func JwtTokenCheck(c *gin.Context) {
 }
 
 func JwtTokenCheckInGraphql(tokenString string) (models.User, error) {
-	tokenString, err := ExtractBearerToken(tokenString)
-	token, err := Parse(tokenString)
 	user := models.User{}
+	tokenString, err := ExtractBearerToken(tokenString)
+	if err != nil {
+		return user, err
+	}
+	token, err := Parse(tokenString)
+
 	if err != nil {
 		return user, err
 	}

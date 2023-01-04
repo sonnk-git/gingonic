@@ -28,8 +28,7 @@ func graphqlHandler() gin.HandlerFunc {
 	// Resolver is in the resolver.go file
 	c := generated.Config{Resolvers: &graph.Resolver{}}
 	c.Directives.Authenticated = func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error) {
-		var ginContext *gin.Context
-		ginContext = ctx.Value("GinContextKey").(*gin.Context)
+		ginContext := ctx.Value(gin.ContextKey).(*gin.Context)
 		token := ginContext.Request.Header.Get("Authorization")
 		_, err = middlewares.JwtTokenCheckInGraphql(token)
 		if err != nil {
@@ -56,7 +55,7 @@ func RegisterGraphQL(r *gin.Engine) {
 
 func ginContextToContextMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx := context.WithValue(c.Request.Context(), "GinContextKey", c)
+		ctx := context.WithValue(c.Request.Context(), gin.ContextKey, c)
 		c.Request = c.Request.WithContext(ctx)
 		c.Set("token", c.Request.Header.Get("Authorization"))
 		c.Next()

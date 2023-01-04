@@ -39,7 +39,7 @@ type queryResolver struct{ *Resolver }
 //    it when you're done.
 //  - You have helper methods in this file. Move them out to keep these resolver files clean.
 func GetUserFromContext(ctx context.Context) (models.User, error) {
-	ginContext := ctx.Value("GinContextKey").(*gin.Context)
+	ginContext := ctx.Value(gin.ContextKey).(*gin.Context)
 	token := ginContext.Request.Header.Get("Authorization")
 	return middlewares.JwtTokenCheckInGraphql(token)
 }

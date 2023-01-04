@@ -6,7 +6,6 @@ import (
 )
 
 func Route(r *gin.RouterGroup) *gin.RouterGroup {
-
 	r.POST("/login", auth.Login)
 	r.POST("/register", auth.Register)
 	r.POST("/logout", auth.Logout)

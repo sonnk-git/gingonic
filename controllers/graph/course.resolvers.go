@@ -88,9 +88,9 @@ func (r *queryResolver) GetCourses(ctx context.Context) ([]*model.Course, error)
 		return nil, gqlerror.Errorf("Error when get user from context")
 	}
 
-	var coursesGQL []*model.Course
 	var courses []OrmModels.Course
 	db.Orm.Where("user_id = ?", user.ID).Find(&courses)
+	coursesGQL := make([]*model.Course, 0, len(courses))
 
 	for _, v := range courses {
 		coursesGQL = append(coursesGQL, &model.Course{

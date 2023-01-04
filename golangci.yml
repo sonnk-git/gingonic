@@ -1,0 +1,24 @@
+run:
+  go: 1.18
+  concurrency: 4
+  timeout: 10m
+
+linters:
+  disable-all: true
+  enable:
+    - asciicheck
+    - depguard
+    - exportloopref
+    - gomodguard
+    - goprintffuncname
+    - gosimple
+    - govet
+    - ineffassign
+    - misspell
+    - nakedret
+    - nolintlint
+    - prealloc
+    - typecheck
+    - unconvert
+    - unused
+    - whitespace

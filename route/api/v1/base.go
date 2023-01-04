@@ -12,19 +12,16 @@ import (
 const V1 = "v1"
 
 func Register(r *gin.RouterGroup) {
-
 	/* ---------------------------  Public routes  --------------------------- */
 	public := r.Group(V1)
 	public.GET("/", func(c *gin.Context) {
 		c.IndentedJSON(http.StatusOK, struct{}{})
 	})
 	public.POST("/send-notification", api.SendNotification)
-	public = auth.Route(public)
-
+	auth.Route(public)
 	/* ---------------------------  Private routes  --------------------------- */
 	private := r.Group(V1)
 	private.Use(middlewares.JwtTokenCheck)
-
 	// User
-	private = user.Route(private)
+	user.Route(private)
 }
