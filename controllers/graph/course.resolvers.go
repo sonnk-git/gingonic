@@ -5,7 +5,6 @@ package graph
 
 import (
 	"context"
-	"fmt"
 	"gingonic/db"
 	model "gingonic/graph"
 	OrmModels "gingonic/models"
@@ -78,7 +77,34 @@ func (r *mutationResolver) EditCourse(ctx context.Context, input model.CourseInp
 
 // DeleteCourse is the resolver for the deleteCourse field.
 func (r *mutationResolver) DeleteCourse(ctx context.Context, id string) (bool, error) {
-	panic(fmt.Errorf("not implemented: DeleteCourse - deleteCourse"))
+	user, err := GetUserFromContext(ctx)
+	if err != nil {
+		return false, gqlerror.Errorf("Error when get user from context")
+	}
+
+	course := OrmModels.Course{}
+	tx := db.Orm.First(&course, "id = ?", id)
+	if tx.Error != nil {
+		return false, gqlerror.Errorf("Error when get course from context")
+	}
+
+	if course.UserID != user.ID {
+		return false, gqlerror.Errorf("User is not owner of course")
+	}
+
+	var cards []OrmModels.Card
+
+	tx = db.Orm.Find(cards, "course_id = ?", course.ID)
+	if tx.Error != nil {
+		return false, gqlerror.Errorf("Error when delete cards")
+	}
+
+	tx = db.Orm.Delete(course)
+	if tx.Error != nil {
+		return false, gqlerror.Errorf("Error when delete course " + course.ID)
+	}
+
+	return true, nil
 }
 
 // GetCourses is the resolver for the getCourses field.

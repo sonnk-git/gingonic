@@ -9,7 +9,7 @@ import (
 func RegisterAPI(r *gin.Engine) {
 	apiGroupRouter := r.Group("/api")
 
-	apiGroupRouter.GET("/", func(c *gin.Context) {
+	apiGroupRouter.GET("", func(c *gin.Context) {
 		c.IndentedJSON(http.StatusOK, struct{}{})
 	})
 
