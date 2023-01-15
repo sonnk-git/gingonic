@@ -80,6 +80,13 @@ type PaginationInput struct {
 	Limit  int     `json:"limit"`
 }
 
+// `Time` is a simple type only containing the current time as
+// a unix epoch timestamp and a string timestamp.
+type Time struct {
+	UnixTime  int    `json:"unixTime"`
+	TimeStamp string `json:"timeStamp"`
+}
+
 type User struct {
 	ID       string `json:"id"`
 	Username string `json:"username"`

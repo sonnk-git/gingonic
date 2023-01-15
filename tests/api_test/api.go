@@ -10,8 +10,8 @@ import (
 )
 
 type ApiScenario struct {
-	Router  *gin.Engine
-	T       *testing.T
+	Router *gin.Engine
+	T      *testing.T
 
 	Name           string
 	Method         string

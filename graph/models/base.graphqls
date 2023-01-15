@@ -7,3 +7,24 @@ type Mutation {
 }
 
 directive @authenticated on FIELD_DEFINITION
+
+"""
+`Time` is a simple type only containing the current time as
+a unix epoch timestamp and a string timestamp.
+"""
+type Time {
+    unixTime: Int!
+    timeStamp: String!
+}
+
+"""
+`Subscription` is where all the subscriptions your clients can
+request. You can use Schema Directives like normal to restrict
+access.
+"""
+type Subscription {
+    """
+    `currentTime` will return a stream of `Time` objects.
+    """
+    currentTime: Time!
+}
