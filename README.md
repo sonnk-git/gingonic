@@ -12,7 +12,7 @@
 - Postgres DB is installed
 - Frontend Source
 
-  https://github.com/khacsonit/flashcard_maker
+  https://github.com/sonnk-git/flashcard_maker
 
 ## Quick start
 
