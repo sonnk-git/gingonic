@@ -1,14 +1,19 @@
 package api
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"gingonic/db"
 	"gingonic/models"
 	"github.com/SherClockHolmes/webpush-go"
 	"github.com/gin-gonic/gin"
+	"io"
+	"log"
 	"net/http"
 	"os"
+	"strings"
+	"time"
 )
 
 type SubscribeNotificationRequest struct {
@@ -192,4 +197,100 @@ func SetSubscribe(ctx *gin.Context) {
 		"status": true,
 		"state":  sub.SubscribeState,
 	})
+}
+
+func CreateCardsFromCSVFile(ctx *gin.Context) {
+	filePtr, err := ctx.FormFile("file")
+	if err != nil {
+		fmt.Println(err.Error())
+		ctx.Status(http.StatusUnprocessableEntity)
+		return
+	}
+
+	file, err := filePtr.Open()
+	if err != nil {
+		fmt.Println(err.Error())
+		ctx.Status(http.StatusUnprocessableEntity)
+		return
+	}
+	csvReader := csv.NewReader(file)
+	csvReader.FieldsPerRecord = -1
+
+	userId, _ := ctx.Get("id")
+	course := models.Course{
+		Name:        time.Now().Format(time.RFC850),
+		Description: "",
+		UserID:      fmt.Sprintf("%s", userId),
+	}
+	tx := db.Orm.Create(&course)
+	if tx.Error != nil {
+		ctx.IndentedJSON(http.StatusUnprocessableEntity, gin.H{
+			"status":  false,
+			"message": tx.Error.Error(),
+		})
+		return
+	}
+
+	var cards []models.Card
+	index := 1
+	for {
+		record, err := csvReader.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Fatal(err)
+		}
+		if index > 2 { // ignore 2 first line
+			ter, def := readRow(record)
+			println(ter, def)
+			cards = append(cards, models.Card{
+				Terminology: ter,
+				Definition:  def,
+				CourseID:    course.ID,
+			})
+		}
+		index++
+	}
+
+	fmt.Printf("%+v\n", cards)
+	tx = db.Orm.Create(&cards)
+	if tx.Error != nil {
+		ctx.IndentedJSON(http.StatusUnprocessableEntity, gin.H{
+			"status":  false,
+			"message": tx.Error.Error(),
+		})
+		return
+	}
+
+	ctx.IndentedJSON(http.StatusOK, gin.H{
+		"status": true,
+	})
+}
+
+func readRow(row []string) (terminology string, definition string) {
+	for k, v := range row {
+		if k == 0 {
+			terminology = v[0:strings.Index(v, "\t")]
+
+			index1 := strings.Index(v, "[")
+			var index2 int
+			if index1 == -1 {
+				continue
+			} else {
+				index1++
+				index2 = strings.Index(v[index1:], "[")
+				if index2 == -1 {
+					continue
+				}
+			}
+			definition = v[index2+index1:]
+		} else {
+			index := strings.Index(v, "[")
+			if index != -1 {
+				definition = v[index:]
+			}
+		}
+	}
+	return
 }

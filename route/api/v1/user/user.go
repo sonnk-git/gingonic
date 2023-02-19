@@ -13,6 +13,7 @@ func Route(r *gin.RouterGroup) *gin.RouterGroup {
 	user.GET("/info", api.GetInfo)
 	user.POST("/subscribe-notification", api.SubscribeNotification)
 	user.POST("/set-subscribe", api.SetSubscribe)
+	user.POST("/create_cards_from_csv_file", api.CreateCardsFromCSVFile)
 
 	return r
 }
