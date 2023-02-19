@@ -8,11 +8,11 @@
 
 ## Requirement
 
-- Golang version: 1.18.9 ^
-- Postgres DB is installed
+- Golang version: 1.18.9+
+- Postgres DB 14.5+
 - Frontend Source
 
-  https://github.com/khacsonit/flashcard_maker
+  https://github.com/sonnk-git/flashcard_maker
 
 ## Quick start
 
