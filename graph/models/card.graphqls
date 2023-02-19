@@ -26,7 +26,7 @@ input CardInput {
 input GetCardsInput {
     courseID: String
     pagination: PaginationInput
-    #    To do: maybe need filter: by id, by type, sort by, etc.
+    #    Todo: maybe need filter: by id, by type, sort by, etc.
 }
 
 type GetCardsResponse {

@@ -17,12 +17,12 @@ import (
 
 // NoOp is the resolver for the NoOp field.
 func (r *mutationResolver) NoOp(ctx context.Context) (*bool, error) {
-	panic(fmt.Errorf("not implemented: NoOp - NoOp"))
+	return new(bool), nil
 }
 
 // NoOp is the resolver for the NoOp field.
 func (r *queryResolver) NoOp(ctx context.Context) (*bool, error) {
-	panic(fmt.Errorf("not implemented: NoOp - NoOp"))
+	return new(bool), nil
 }
 
 // CurrentTime is the resolver for the currentTime field.
@@ -79,9 +79,9 @@ type subscriptionResolver struct{ *Resolver }
 // !!! WARNING !!!
 // The code below was going to be deleted when updating resolvers. It has been copied here so you have
 // one last chance to move it out of harms way if you want. There are two reasons this happens:
-//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//    it when you're done.
-//  - You have helper methods in this file. Move them out to keep these resolver files clean.
+//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//     it when you're done.
+//   - You have helper methods in this file. Move them out to keep these resolver files clean.
 func GetUserFromContext(ctx context.Context) (models.User, error) {
 	ginContext := ctx.Value(gin.ContextKey).(*gin.Context)
 	token := ginContext.Request.Header.Get("Authorization")
