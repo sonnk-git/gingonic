@@ -4,16 +4,17 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
-	"gingonic/db"
-	"gingonic/models"
-	"github.com/SherClockHolmes/webpush-go"
-	"github.com/gin-gonic/gin"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	"gingonic/db"
+	"gingonic/models"
+	"github.com/SherClockHolmes/webpush-go"
+	"github.com/gin-gonic/gin"
 )
 
 type SubscribeNotificationRequest struct {
@@ -271,7 +272,17 @@ func CreateCardsFromCSVFile(ctx *gin.Context) {
 func readRow(row []string) (terminology string, definition string) {
 	for k, v := range row {
 		if k == 0 {
-			terminology = v[0:strings.Index(v, "\t")]
+			indexTer := strings.Index(v, "\t")
+			if indexTer != -1 {
+				terminology = v[0:indexTer]
+			} else {
+				indexTer = strings.Index(v, " ")
+				if indexTer != -1 {
+					terminology = v[0:indexTer]
+				} else {
+					terminology = v
+				}
+			}
 
 			index1 := strings.Index(v, "[")
 			var index2 int
