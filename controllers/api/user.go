@@ -209,6 +209,8 @@ func CreateCardsFromCSVFile(ctx *gin.Context) {
 	}
 
 	file, err := filePtr.Open()
+	defer file.Close()
+
 	if err != nil {
 		fmt.Println(err.Error())
 		ctx.Status(http.StatusUnprocessableEntity)
