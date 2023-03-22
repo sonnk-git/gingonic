@@ -6,10 +6,13 @@ import (
 	"gingonic/middlewares"
 	"gingonic/models"
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"github.com/golang-jwt/jwt/v4"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
 )
+
+var validate *validator.Validate
 
 func Login(c *gin.Context) {
 	user := &models.User{}
@@ -17,7 +20,16 @@ func Login(c *gin.Context) {
 	err := c.BindJSON(&user)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"status": false, "message": err.Error()})
+		return
 	}
+	validate = validator.New()
+
+	err = validate.Struct(user)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusPreconditionFailed, gin.H{"status": false, "message": err.Error()})
+		return
+	}
+
 	passInput := user.Password
 
 	record := db.Orm.First(user, "email = ?", user.Email)
