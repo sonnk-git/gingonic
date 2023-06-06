@@ -19,6 +19,8 @@ func Register(r *gin.RouterGroup) {
 	})
 	public.POST("/send-notification", api.SendNotification)
 	auth.Route(public)
+
+	public.POST("/addCardFromBrowser", api.AddCardFromBrowser)
 	/* ---------------------------  Private routes  --------------------------- */
 	private := r.Group(V1)
 	private.Use(middlewares.JwtTokenCheck)

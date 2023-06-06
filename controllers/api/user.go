@@ -29,6 +29,11 @@ type SendNotificationRequest struct {
 	EveryMinute int
 }
 
+type AddCardFromBrowserRequest struct {
+	Terminology string
+	Definition  string
+}
+
 func GetInfo(ctx *gin.Context) {
 	id, _ := ctx.Get("id")
 	email, _ := ctx.Get("email")
@@ -144,23 +149,6 @@ func SendNotification(ctx *gin.Context) {
 	})
 }
 
-func getRandomCardFromCourse(courseId string, userId string) (*models.Card, error) {
-	var card models.Card
-	if courseId != "" {
-		tx := db.Orm.Raw("select * from cards where course_id = ? order by random() limit 1", courseId).Scan(&card)
-		if tx.Error != nil {
-			return nil, tx.Error
-		}
-	} else {
-		tx := db.Orm.Raw("select * from cards inner join courses on cards.course_id = courses.id where courses.user_id = ? order by random() limit 1", userId).Scan(&card)
-		if tx.Error != nil {
-			return nil, tx.Error
-		}
-	}
-
-	return &card, nil
-}
-
 func SetSubscribe(ctx *gin.Context) {
 	var req SetSubscribeRequest
 	id, _ := ctx.Get("id")
@@ -271,6 +259,51 @@ func CreateCardsFromCSVFile(ctx *gin.Context) {
 	})
 }
 
+func AddCardFromBrowser(ctx *gin.Context) {
+	var req AddCardFromBrowserRequest
+
+	if err := ctx.BindJSON(&req); err != nil {
+		fmt.Printf("%+v/n", err)
+		ctx.IndentedJSON(http.StatusBadRequest, gin.H{
+			"status": false,
+		})
+		return
+	}
+
+	course := models.Course{
+		Name:        "Browser Deck",
+		Description: "Browser Deck",
+	}
+	tx := db.Orm.First(&course, "name = ?", course.Name)
+	if tx.Error != nil || tx.RowsAffected < 1 {
+		tx = db.Orm.Create(&course)
+		if tx.Error != nil {
+			ctx.IndentedJSON(http.StatusInternalServerError, gin.H{
+				"status": false,
+			})
+			return
+		}
+	}
+
+	card := &models.Card{
+		Terminology: req.Terminology,
+		Definition:  req.Definition,
+		CourseID:    course.ID,
+	}
+
+	tx = db.Orm.Create(&card)
+	if tx.Error != nil {
+		ctx.IndentedJSON(http.StatusInternalServerError, gin.H{
+			"status": false,
+		})
+		return
+	}
+
+	ctx.IndentedJSON(http.StatusOK, gin.H{
+		"status": true,
+	})
+}
+
 func readRow(row []string) (terminology string, definition string) {
 	for k, v := range row {
 		if k == 0 {
@@ -306,4 +339,21 @@ func readRow(row []string) (terminology string, definition string) {
 		}
 	}
 	return
+}
+
+func getRandomCardFromCourse(courseId string, userId string) (*models.Card, error) {
+	var card models.Card
+	if courseId != "" {
+		tx := db.Orm.Raw("select * from cards where course_id = ? order by random() limit 1", courseId).Scan(&card)
+		if tx.Error != nil {
+			return nil, tx.Error
+		}
+	} else {
+		tx := db.Orm.Raw("select * from cards inner join courses on cards.course_id = courses.id where courses.user_id = ? order by random() limit 1", userId).Scan(&card)
+		if tx.Error != nil {
+			return nil, tx.Error
+		}
+	}
+
+	return &card, nil
 }

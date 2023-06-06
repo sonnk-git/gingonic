@@ -4,12 +4,16 @@ import (
 	"gingonic/route/api"
 	"gingonic/tests/api_test"
 	"github.com/gin-gonic/gin"
+	"io"
 	"testing"
 )
 
 func TestPingRoute(t *testing.T) {
 	router := gin.New()
 	api.RegisterAPI(router)
+
+	// disable logging routes
+	router.Use(gin.LoggerWithWriter(io.Discard))
 
 	apiScenario := []api_test.ApiScenario{
 		{

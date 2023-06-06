@@ -24,11 +24,9 @@ func SetupRouter() *gin.Engine {
 	// Disable Console Color
 	// gin.DisableConsoleColor()
 	gin.SetMode(os.Getenv("MODE"))
+	gin.ForceConsoleColor()
 
-	// use New instead of Default: https://github.com/toorop/gin-logrus/issues/2
-	r := gin.New()
-	r.Use(gin.Recovery())
-	r = middlewares.SetUpLogger(r)
+	r := gin.Default()
 	r.Use(middlewares.CORSMiddleware())
 
 	err = models.AutoMigrate(db.InitORM())
